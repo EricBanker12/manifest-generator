@@ -13,6 +13,7 @@ const IGNORED_FILES = [
 // read existing manifest.json
 let manifest
 try {
+    // sanitize input
     manifest = require('./manifest.json')
     if (manifest && typeof manifest === 'object') {
         if (!manifest.files) manifest.files = {}
@@ -24,6 +25,7 @@ try {
     }
 }
 catch (error) {
+    // make new manifest
     manifest = {
         files: {}
     }
@@ -37,6 +39,7 @@ for (let entry of Object.keys(manifest.files)) {
     fs.access(path.join(__dirname, entry), fs.constants.F_OK, (err) => {
         checking -= 1
         if (err) delete manifest.files[entry]
+        checkProg()
         return
     })
 }
@@ -77,6 +80,7 @@ function getHash(file, type = 'sha256') {
     }
 }
 
+// check if process completed
 function checkProg() {
     if (reading === 0 && checking === 0) {
         fs.writeFileSync(path.join(__dirname, 'manifest.json'), JSON.stringify(manifest, null, '\t'), 'utf8')
