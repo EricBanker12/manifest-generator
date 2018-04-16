@@ -5,4 +5,4 @@ Copy-paste "manifest-generator.js" into your module's folder and run it to creat
 
 "manifest-generator.bat" is an optional launcher in case you cannot set manifest-generator.js to "open with node.exe"
 ### Requirements
-[Node](https://nodejs.org) v9 or later
+[Node](https://nodejs.org) v8 or newer
