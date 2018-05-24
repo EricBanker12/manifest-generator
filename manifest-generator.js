@@ -73,10 +73,10 @@ function getFiles(relativePath = '', files) {
 function getHash(file, type = 'sha256') {
     file = file.replace(/\\/g, '/')
     if (manifest.files[file] && typeof manifest.files[file] === 'object') {
-        manifest.files[file].hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, file), 'utf8')).digest('hex')
+        manifest.files[file].hash = crypto.createHash(type).update(fs.readFileSync(path.join(__dirname, file))).digest('hex')
     }
     else {
-        manifest.files[file] = crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, file), 'utf8')).digest('hex')
+        manifest.files[file] = crypto.createHash(type).update(fs.readFileSync(path.join(__dirname, file))).digest('hex')
     }
 }
 
