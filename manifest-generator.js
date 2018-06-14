@@ -10,6 +10,18 @@ const IGNORED_FILES = [
     'node.exe'
 ]
 
+// force \n instead of \r\n
+const forceUnixLineEndings = true
+
+// filetypes to force unix line ending if enabled
+const forceUnixFileTypes = [
+    'txt',
+    'js',
+    'json',
+    'xml',
+    'md'
+]
+
 // read existing manifest.json
 let manifest
 try {
@@ -72,11 +84,24 @@ function getFiles(relativePath = '', files) {
 // get sha256 hash
 function getHash(file, type = 'sha256') {
     file = file.replace(/\\/g, '/')
+    forceUnix(file)
     if (manifest.files[file] && typeof manifest.files[file] === 'object') {
         manifest.files[file].hash = crypto.createHash(type).update(fs.readFileSync(path.join(__dirname, file))).digest('hex')
     }
     else {
         manifest.files[file] = crypto.createHash(type).update(fs.readFileSync(path.join(__dirname, file))).digest('hex')
+    }
+}
+
+// force unix line endings
+function forceUnix(file) {
+    for (let type of forceUnixFileTypes) {
+        if (file.slice(-5).includes(type)) {
+            let data = fs.readFileSync(path.join(__dirname, file), 'utf8')
+            data = data.replace(/\r\n/g, '\n')
+            fs.writeFileSync(path.join(__dirname, file), data, 'utf8')
+            return
+        }
     }
 }
 
