@@ -1,7 +1,16 @@
-const crypto = require('crypto'),
-    fs = require('fs'),
-	path = require('path')
+////////////////////
+//  CONFIG        //
+////////////////////
 
+const forceUnixLineEndings = true //force \n instead of \r\n (default: true)
+
+const removeOldDefs = false // remove undetected defs (default: false)
+
+////////////////////
+//  LISTS         //
+////////////////////
+
+// ignore these files for making manifest
 const IGNORED_FILES = [
     'manifest.json',
     'manifest-generator.js',
@@ -10,11 +19,14 @@ const IGNORED_FILES = [
     'node.exe'
 ]
 
-// force \n instead of \r\n
-const forceUnixLineEndings = true
+// ignore files/folders which start with these characters: i.e. ".git" or "_old"
+const IGNORED_CHARACTERS = [
+    '.',
+    '_'
+]
 
 // filetypes to force unix line ending if enabled
-const forceUnixFileTypes = [
+const FORCE_UNIX_FILE_TYPES = [
     '.txt',
     '.text',
     '.js',
@@ -32,6 +44,14 @@ const forceUnixFileTypes = [
     '.list',
     '.lst'
 ]
+
+////////////////////
+//  CODE          //
+////////////////////
+
+const crypto = require('crypto'),
+    fs = require('fs'),
+	path = require('path')
 
 // set directory to launch argument or local directory
 let directory = __dirname
@@ -54,6 +74,7 @@ try {
     manifest = require(path.join(directory, 'manifest.json'))
     if (manifest && typeof manifest === 'object') {
         if (!manifest.files) manifest.files = {}
+        if (removeOldDefs) delete manifest.defs
     }
     else {
         manifest = {
@@ -68,8 +89,8 @@ catch (error) {
     }
 }
 
-let checking = 0
 // delete removed file entries
+let checking = 0
 for (let entry of Object.keys(manifest.files)) {
     // check if file exists
     checking  += 1
@@ -89,8 +110,8 @@ function getFiles(relativePath = '', files) {
     let dir = path.join(directory, relativePath)
     if (!files) files = fs.readdirSync(dir, 'utf8')
     for (let file of files) {
-        // if not ignored file or begins with . or _
-        if (!IGNORED_FILES.includes(file) && !['.', '_'].includes(file[0])) {
+        // if not ignored file or begins with ignored character
+        if (!IGNORED_FILES.includes(file) && !IGNORED_CHARACTERS.includes(file[0])) {
             reading += 1
             fs.readdir(path.join(dir, file), 'utf8', (err, moreFiles) => {
                 if (moreFiles) {
@@ -109,7 +130,10 @@ function getFiles(relativePath = '', files) {
 // get sha256 hash
 function getHash(file, type = 'sha256') {
     file = file.replace(/\\/g, '/')
+    // force unix line endings
     if (forceUnixLineEndings) forceUnix(file)
+    // get defs
+    getDefs(file)
     if (manifest.files[file] && typeof manifest.files[file] === 'object') {
         manifest.files[file].hash = crypto.createHash(type).update(fs.readFileSync(path.join(directory, file))).digest('hex')
     }
@@ -118,10 +142,52 @@ function getHash(file, type = 'sha256') {
     }
 }
 
+// get defs
+function getDefs(file) {
+    if (file.slice(-4).includes('.js')) {
+        let data = fs.readFileSync(path.join(directory, file), 'utf8')
+        // ignore comments
+        data = data.replace(/\/\/.*\/\*(?!.*\*\/)/g,'') // ignore: // ... /* ...
+        data = data.replace(/\/\*[^]*?\*\//gm,'') // ignore: /* ... */
+        data = data.replace(/\/\/.*/g,'') // ignore: // ...
+        let packets = data.match(/['"`][CS]_[A-Z_]+['"`],[ \t\n]*(\d+|['"`]raw['"`])/igm)
+        //console.log(packets)
+        if (packets) {
+            if (!Array.isArray(packets)) packets = [packets]
+            for (let packet of packets) {
+                // make defs object for manifest
+                if (!manifest.defs) manifest.defs = {}
+                // formatting
+                packet = packet.replace(/['"` \t\n]/igm, '')
+                packet = packet.split(',')
+                isNaN(packet[1]) ? packet[1] = packet[1].toLowerCase() : packet[1] = Number(packet[1])
+                // if in manifest
+                if (manifest.defs[packet[0]]) {
+                    // add to list
+                    if (Array.isArray(manifest.defs[packet[0]])) {
+                        if (!manifest.defs[packet[0]].includes(packet[1])) {
+                            manifest.defs[packet[0]].push(packet[1])
+                            manifest.defs[packet[0]].sort((a,b)=>{return a-b})
+                        }
+                    }
+                    // change to list
+                    else if (['number', 'string'].includes(typeof manifest.defs[packet[0]]) && manifest.defs[packet[0]] != packet[1]) {
+                        manifest.defs[packet[0]] = [manifest.defs[packet[0]], packet[1]]
+                        manifest.defs[packet[0]].sort((a,b)=>{return a-b})
+                    }
+                }
+                else {
+                    manifest.defs[packet[0]] = packet[1]
+                }
+            }
+        }
+    }
+}
+
 // force unix line endings
 function forceUnix(file) {
     // check if read and writable
-    for (let type of forceUnixFileTypes) {
+    for (let type of FORCE_UNIX_FILE_TYPES) {
         if (file.slice(-6).includes(type)) {
             try {
                 let data = fs.readFileSync(path.join(directory, file), 'utf8')
@@ -137,9 +203,22 @@ function forceUnix(file) {
     }
 }
 
+// alphabetize object keys
+function alphabetizeObject(obj) {
+    let keys = Object.keys(obj)
+    keys.sort()
+    let newObj = {}
+    for (let key of keys) {
+        newObj[key] = obj[key]
+    }
+    return newObj
+}
+
 // check if process completed
 function checkProg() {
     if (reading === 0 && checking === 0) {
+        manifest.files = alphabetizeObject(manifest.files)
+        if (manifest.defs) manifest.defs = alphabetizeObject(manifest.defs)
         fs.writeFileSync(path.join(directory, 'manifest.json'), JSON.stringify(manifest, null, '\t'), 'utf8')
         console.log('"manifest.json" generation complete.')
     }
