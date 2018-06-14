@@ -16,15 +16,16 @@ const forceUnixLineEndings = true
 // filetypes to force unix line ending if enabled
 const forceUnixFileTypes = [
     '.txt',
-    '.text'
+    '.text',
     '.js',
     '.json',
-    '.jsn'
+    '.jsn',
     '.xml',
     '.md',
     '.htm',
     '.html',
     '.css',
+    '.csv',
     '.php',
     '.cfg',
     '.ini',
