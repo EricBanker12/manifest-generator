@@ -15,11 +15,21 @@ const forceUnixLineEndings = true
 
 // filetypes to force unix line ending if enabled
 const forceUnixFileTypes = [
-    'txt',
-    'js',
-    'json',
-    'xml',
-    'md'
+    '.txt',
+    '.text'
+    '.js',
+    '.json',
+    '.jsn'
+    '.xml',
+    '.md',
+    '.htm',
+    '.html',
+    '.css',
+    '.php',
+    '.cfg',
+    '.ini',
+    '.list',
+    '.lst'
 ]
 
 // read existing manifest.json
@@ -84,7 +94,7 @@ function getFiles(relativePath = '', files) {
 // get sha256 hash
 function getHash(file, type = 'sha256') {
     file = file.replace(/\\/g, '/')
-    forceUnix(file)
+    if (forceUnixLineEndings) forceUnix(file)
     if (manifest.files[file] && typeof manifest.files[file] === 'object') {
         manifest.files[file].hash = crypto.createHash(type).update(fs.readFileSync(path.join(__dirname, file))).digest('hex')
     }
@@ -96,7 +106,7 @@ function getHash(file, type = 'sha256') {
 // force unix line endings
 function forceUnix(file) {
     for (let type of forceUnixFileTypes) {
-        if (file.slice(-5).includes(type)) {
+        if (file.slice(-6).includes(type)) {
             let data = fs.readFileSync(path.join(__dirname, file), 'utf8')
             data = data.replace(/\r\n/g, '\n')
             fs.writeFileSync(path.join(__dirname, file), data, 'utf8')
