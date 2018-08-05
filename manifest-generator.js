@@ -6,6 +6,8 @@ const forceUnixLineEndings = true //force \n instead of \r\n (default: true)
 
 const removeOldDefs = false // remove undetected defs (default: false)
 
+const addAutoUpdateDisableBool = true // add ("disableAutoUpdate": false) to module.json if missing (default: true)
+
 ////////////////////
 //  LISTS         //
 ////////////////////
@@ -64,6 +66,27 @@ if (process.argv[2]) {
     catch (err) {
         console.log(`"${directory}" is not a valid folder.`)
         return
+    }
+}
+
+// read existing module.json
+let modulejson
+if (addAutoUpdateDisableBool) {
+    try {
+        // sanitize input
+        modulejson = require(path.join(directory, 'module.json'))
+        if (modulejson && typeof modulejson === 'object') {
+            if (modulejson.disableAutoUpdate === undefined) {
+                let newModule = {disableAutoUpdate: false}
+                Object.assign(newModule, modulejson)
+                fs.writeFileSync(path.join(directory, 'module.json'), JSON.stringify(newModule, null, '\t'), 'utf8')
+            }
+        }
+    }
+    catch (error) {
+        // make new module
+        let newModule = {disableAutoUpdate: false}
+        fs.writeFileSync(path.join(directory, 'module.json'), JSON.stringify(newModule, null, '\t'), 'utf8')
     }
 }
 

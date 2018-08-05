@@ -1,7 +1,7 @@
 ## manifest-generator
 `manifest.json` generator/updater for Caali's tera-proxy auto-update feature. Updates sha256 hash for all files in directory and all subdirectories.
 ### Instructions
-Edit `manifest-generator.js` to change if you want to force unix line endings (default: true) and remove old/unfound manifest defs (default: false). Use one of the following methods to create/update your `module's manifest.json`.
+Edit `manifest-generator.js` to change if you want to force unix line endings (default: true), remove old/unfound manifest defs (default: false), or add `"disableAutoUpdate": false` to module.json (default: true). Use one of the following methods to create/update your module's `manifest.json`.
 #### Drag-n'-Drop Method
 Highlight and drag your module's folder (or folders for updating multiple modules) onto `manifest-generator.bat` to "Open with `manifest-generator.bat`"
 #### Copy-Paste Method
