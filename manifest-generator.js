@@ -79,14 +79,14 @@ if (addAutoUpdateDisableBool) {
             if (modulejson.disableAutoUpdate === undefined) {
                 let newModule = {disableAutoUpdate: false}
                 Object.assign(newModule, modulejson)
-                fs.writeFileSync(path.join(directory, 'module.json'), JSON.stringify(newModule, null, '\t'), 'utf8')
+                fs.writeFileSync(path.join(directory, 'module.json'), jsonify(newModule), 'utf8')
             }
         }
     }
     catch (error) {
         // make new module
         let newModule = {disableAutoUpdate: false}
-        fs.writeFileSync(path.join(directory, 'module.json'), JSON.stringify(newModule, null, '\t'), 'utf8')
+        fs.writeFileSync(path.join(directory, 'module.json'), jsonify(newModule), 'utf8')
     }
 }
 
@@ -173,7 +173,7 @@ function getDefs(file) {
         data = data.replace(/\/\/.*\/\*(?!.*\*\/)/g,'') // ignore: // ... /* ...
         data = data.replace(/\/\*[^]*?\*\//gm,'') // ignore: /* ... */
         data = data.replace(/\/\/.*/g,'') // ignore: // ...
-        let packets = data.match(/['"`][CS]_[A-Z_]+['"`],[ \t\n]*(\d+|['"`]raw['"`])/igm)
+        let packets = data.match(/['"`][CS]_[A-Z_]+['"`],[ \t\n]*(\d+|['"`]raw['"`]|.+[ \t\n]*\d+[ \t\n]*[:][ \t\n]*\d+)/igm) //[ \t\n]*\d+[ \t\n]*[:][ \t\n]*\d+
         //console.log(packets)
         if (packets) {
             if (!Array.isArray(packets)) packets = [packets]
@@ -183,24 +183,43 @@ function getDefs(file) {
                 // formatting
                 packet = packet.replace(/['"` \t\n]/igm, '')
                 packet = packet.split(',')
-                isNaN(packet[1]) ? packet[1] = packet[1].toLowerCase() : packet[1] = Number(packet[1])
-                // if in manifest
-                if (manifest.defs[packet[0]]) {
-                    // add to list
-                    if (Array.isArray(manifest.defs[packet[0]])) {
-                        if (!manifest.defs[packet[0]].includes(packet[1])) {
-                            manifest.defs[packet[0]].push(packet[1])
+                // if 'raw' or (patchVer > X ? Y : Z)
+                if (isNaN(packet[1])) {
+                    packet[1] = packet[1].toLowerCase()
+                    // get 'raw'
+                    if (packet[1] == 'raw') packet[1] = ['raw']
+                    // get Y and Z
+                    else {
+                        packet[1] = packet[1].match(/\d+[:]\d+/)[0]
+                        if (packet[1]) {
+                            packet[1] = packet[1].split(':')
+                            for (let index in packet[1]) {
+                                packet[1][index] = Number(packet[1][index])
+                            }
+                        }
+                        else packet[1] = []
+                    }
+                }
+                else packet[1] = [Number(packet[1])]
+                for (let packetVer of packet[1]) {
+                    // if in manifest
+                    if (manifest.defs[packet[0]]) {
+                        // add to list
+                        if (Array.isArray(manifest.defs[packet[0]])) {
+                            if (!manifest.defs[packet[0]].includes(packetVer)) {
+                                manifest.defs[packet[0]].push(packetVer)
+                                manifest.defs[packet[0]].sort((a,b)=>{return a-b})
+                            }
+                        }
+                        // change to list
+                        else if (['number', 'string'].includes(typeof manifest.defs[packet[0]]) && manifest.defs[packet[0]] != packetVer) {
+                            manifest.defs[packet[0]] = [manifest.defs[packet[0]], packetVer]
                             manifest.defs[packet[0]].sort((a,b)=>{return a-b})
                         }
                     }
-                    // change to list
-                    else if (['number', 'string'].includes(typeof manifest.defs[packet[0]]) && manifest.defs[packet[0]] != packet[1]) {
-                        manifest.defs[packet[0]] = [manifest.defs[packet[0]], packet[1]]
-                        manifest.defs[packet[0]].sort((a,b)=>{return a-b})
+                    else {
+                        manifest.defs[packet[0]] = packetVer
                     }
-                }
-                else {
-                    manifest.defs[packet[0]] = packet[1]
                 }
             }
         }
@@ -237,12 +256,21 @@ function alphabetizeObject(obj) {
     return newObj
 }
 
+// JSON.stringify but make lists single line
+function jsonify(obj) {
+    obj = JSON.stringify(obj, null, '\t')
+    for (let list of obj.match(/\[[^]+?\].*/igm)) {
+        obj = obj.substring(0,obj.indexOf(list)) + list.replace(/[ \n\t]*/igm, '') + obj.substring(obj.indexOf(list) + list.length)
+    }
+    return obj
+}
+
 // check if process completed
 function checkProg() {
     if (reading === 0 && checking === 0) {
         manifest.files = alphabetizeObject(manifest.files)
         if (manifest.defs) manifest.defs = alphabetizeObject(manifest.defs)
-        fs.writeFileSync(path.join(directory, 'manifest.json'), JSON.stringify(manifest, null, '\t'), 'utf8')
+        fs.writeFileSync(path.join(directory, 'manifest.json'), jsonify(manifest), 'utf8')
         console.log('"manifest.json" generation complete.')
     }
 }
