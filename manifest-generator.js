@@ -259,7 +259,8 @@ function alphabetizeObject(obj) {
 // JSON.stringify but make lists single line
 function jsonify(obj) {
     obj = JSON.stringify(obj, null, '\t')
-    for (let list of obj.match(/\[[^]+?\].*/igm)) {
+    let lists = obj.match(/\[[^]+?\].*/igm)
+    if (lists) for (let list of lists) {
         obj = obj.substring(0,obj.indexOf(list)) + list.replace(/[ \n\t]*/igm, '') + obj.substring(obj.indexOf(list) + list.length)
     }
     return obj
