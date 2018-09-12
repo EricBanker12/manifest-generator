@@ -4,7 +4,7 @@
 
 const forceUnixLineEndings = true //force \n instead of \r\n (default: true)
 
-const removeOldDefs = false // remove undetected defs (default: false)
+const removeOldDefs = true // remove undetected defs (default: false)
 
 const addAutoUpdateDisableBool = true // add ("disableAutoUpdate": false) to module.json if missing (default: true)
 
@@ -173,36 +173,31 @@ function getDefs(file) {
         data = data.replace(/\/\/.*\/\*(?!.*\*\/)/g,'') // ignore: // ... /* ...
         data = data.replace(/\/\*[^]*?\*\//gm,'') // ignore: /* ... */
         data = data.replace(/\/\/.*/g,'') // ignore: // ...
-        let packets = data.match(/['"`][CS]_[A-Z_]+['"`],[ \t\n]*(\d+|['"`]raw['"`]|.+[ \t\n]*\d+[ \t\n]*[:][ \t\n]*\d+)/igm) //[ \t\n]*\d+[ \t\n]*[:][ \t\n]*\d+
+        data = data.replace(/[A-Z]+\.base\.majorPatchVersion/igm,'majorPatchVersion')
+        let packets = data.match(/['"`][CS]_[A-Z_]+['"`][ \t]*,[^\n,\]]+/igm)
         //console.log(packets)
         if (packets) {
             if (!Array.isArray(packets)) packets = [packets]
             for (let packet of packets) {
                 // make defs object for manifest
                 if (!manifest.defs) manifest.defs = {}
-                // formatting
-                packet = packet.replace(/['"` \t\n]/igm, '')
+                // get def versions
                 packet = packet.split(',')
-                // if 'raw' or (patchVer > X ? Y : Z)
-                if (isNaN(packet[1])) {
-                    packet[1] = packet[1].toLowerCase()
-                    // get 'raw'
-                    if (packet[1] == 'raw') packet[1] = ['raw']
-                    // get Y and Z
-                    else {
-                        packet[1] = packet[1].match(/\d+[:]\d+/)[0]
-                        if (packet[1]) {
-                            packet[1] = packet[1].split(':')
-                            for (let index in packet[1]) {
-                                packet[1][index] = Number(packet[1][index])
-                            }
-                        }
-                        else packet[1] = []
+                let versions = []
+                for (let majorPatchVersion = 60; majorPatchVersion <= 100; majorPatchVersion += 1) {
+                    try {v = eval(packet[1])}
+                    catch (err) {
+                        console.log(`eval(${packet[1]})`)
+                        console.log(err)
+                        majorPatchVersion = 101
                     }
+                    if (v && !versions.includes(v)) versions.push(v)
                 }
-                else packet[1] = [Number(packet[1])]
-                for (let packetVer of packet[1]) {
+                for (let packetVer of versions) {
+                    // if NaN
+                    if (isNaN(packetVer)) packetVer = String(packetVer).toLowerCase()
                     // if in manifest
+                    packet[0] = packet[0].replace(/['"` \t\n]/igm, '')
                     if (manifest.defs[packet[0]]) {
                         // add to list
                         if (Array.isArray(manifest.defs[packet[0]])) {
