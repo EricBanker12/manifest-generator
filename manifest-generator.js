@@ -174,7 +174,7 @@ function getDefs(file) {
         data = data.replace(/\/\*[^]*?\*\//gm,'') // ignore: /* ... */
         data = data.replace(/\/\/.*/g,'') // ignore: // ...
         data = data.replace(/[A-Z]+\.base\.majorPatchVersion/igm,'majorPatchVersion')
-        let packets = data.match(/['"`][CS]_[A-Z_]+['"`][ \t]*,[^\n,\]]+/igm)
+        let packets = data.match(/['"`][CS]_[A-Z_]+['"`][ \t]*,([ \t\n]*\d+|[ \t\n]*[`'"]raw[`'"`]|[^\n,\]]+)/igm)
         //console.log(packets)
         if (packets) {
             if (!Array.isArray(packets)) packets = [packets]
