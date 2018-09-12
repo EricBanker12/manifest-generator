@@ -4,7 +4,7 @@
 
 const forceUnixLineEndings = true //force \n instead of \r\n (default: true)
 
-const removeOldDefs = true // remove undetected defs (default: false)
+const removeOldDefs = true // remove undetected defs (default: true)
 
 const addAutoUpdateDisableBool = true // add ("disableAutoUpdate": false) to module.json if missing (default: true)
 
