@@ -6,6 +6,8 @@ const forceUnixLineEndings = true //force \n instead of \r\n (default: true)
 
 const removeOldDefs = true // remove undetected defs (default: true)
 
+const onlyHighestDefVer = false // only greatest def version added to manifest (default: false)
+
 const addAutoUpdateDisableBool = true // add ("disableAutoUpdate": false) to module.json if missing (default: true)
 
 ////////////////////
@@ -185,6 +187,7 @@ function getDefs(file) {
                 packet = packet.split(',')
                 let versions = []
                 for (let majorPatchVersion = 60; majorPatchVersion <= 100; majorPatchVersion += 1) {
+                    let v
                     try {v = eval(packet[1])}
                     catch (err) {
                         console.log(`eval(${packet[1]})`)
@@ -210,6 +213,12 @@ function getDefs(file) {
                         else if (['number', 'string'].includes(typeof manifest.defs[packet[0]]) && manifest.defs[packet[0]] != packetVer) {
                             manifest.defs[packet[0]] = [manifest.defs[packet[0]], packetVer]
                             manifest.defs[packet[0]].sort((a,b)=>{return a-b})
+                        }
+                        // delete other versions
+                        if (onlyHighestDefVer && Array.isArray(manifest.defs[packet[0]])) {
+                            let index = manifest.defs[packet[0]].length - 1
+                            if (typeof manifest.defs[packet[0]][index] == "string") index -= 1
+                            manifest.defs[packet[0]] = manifest.defs[packet[0]][index]
                         }
                     }
                     else {
