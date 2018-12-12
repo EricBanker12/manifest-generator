@@ -4,6 +4,7 @@
 Edit `manifest-generator.js` to: 
 * Force unix line endings (default: true)
 * Remove old/unfound manifest defs (default: true)
+* Only add highest/newest found version of def to manifest (default: false)
 * Add `"disableAutoUpdate": false` to module.json (default: true)
 
 Use one of the following methods to create/update your module's `manifest.json`.
