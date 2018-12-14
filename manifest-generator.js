@@ -20,7 +20,7 @@ const addDescription = "Description goes here." // add ("description": <addDescr
 
 const addServers = [""] // add ("servers": <addServers>) to module.json if missing (default: [""])
 
-const addSupportURL = "" // add ("supportURL": <addSupportURL>) to module.json if missing (default: "")
+const addSupportUrl = "" // add ("supportURL": <addSupportURL>) to module.json if missing (default: "")
 
 ////////////////////
 //  LISTS         //
@@ -106,8 +106,8 @@ if (addDescription && modulejson.description === undefined) {
 if (addServers && addServers[0] && modulejson.servers === undefined) {
     modulejson.servers = addServers
 }
-if (addSupportURL && modulejson.supportURL === undefined) {
-    modulejson.supportURL = addSupportURL
+if (addSupportUrl && modulejson.supportUrl === undefined) {
+    modulejson.supportUrl = addSupportUrl
 }
 fs.writeFileSync(path.join(directory, 'module.json'), jsonify(modulejson), 'utf8')
 
