@@ -12,6 +12,16 @@ const onlyHighestDefVer = false // only greatest def version added to manifest (
 
 const addAutoUpdateDisableBool = true // add ("disableAutoUpdate": false) to module.json if missing (default: true)
 
+const addFolderNameAsName = true // add ("name": <folder name>) to module.json if missing (default: true)
+
+const addAuthorName = "" // add ("author": <addAuthorName>) to module.json if missing (default: "")
+
+const addDescription = "Description goes here." // add ("description": <addDescription>) to module.json if missing (default: "Description goes here.")
+
+const addServers = [""] // add ("servers": <addServers>) to module.json if missing (default: [""])
+
+const addSupportURL = "" // add ("supportURL": <addSupportURL>) to module.json if missing (default: "")
+
 ////////////////////
 //  LISTS         //
 ////////////////////
@@ -75,24 +85,31 @@ if (process.argv[2]) {
 
 // read existing module.json
 let modulejson
-if (addAutoUpdateDisableBool) {
-    try {
-        // sanitize input
-        modulejson = require(path.join(directory, 'module.json'))
-        if (modulejson && typeof modulejson === 'object') {
-            if (modulejson.disableAutoUpdate === undefined) {
-                let newModule = {disableAutoUpdate: false}
-                Object.assign(newModule, modulejson)
-                fs.writeFileSync(path.join(directory, 'module.json'), jsonify(newModule), 'utf8')
-            }
-        }
-    }
-    catch (error) {
-        // make new module
-        let newModule = {disableAutoUpdate: false}
-        fs.writeFileSync(path.join(directory, 'module.json'), jsonify(newModule), 'utf8')
-    }
+try {
+    modulejson = require(path.join(directory, 'module.json'))
 }
+catch (error) {
+    modulejson = {}
+}
+if (addAutoUpdateDisableBool && modulejson.disableAutoUpdate === undefined) {
+    modulejson.disableAutoUpdate = false
+}
+if (addFolderNameAsName && modulejson.name === undefined) {
+    modulejson.name = path.basename(directory)
+}
+if (addAuthorName && modulejson.author === undefined) {
+    modulejson.author = addAuthorName
+}
+if (addDescription && modulejson.description === undefined) {
+    modulejson.description = addDescription
+}
+if (addServers && addServers[0] && modulejson.servers === undefined) {
+    modulejson.servers = addServers
+}
+if (addSupportURL && modulejson.supportURL === undefined) {
+    modulejson.supportURL = addSupportURL
+}
+fs.writeFileSync(path.join(directory, 'module.json'), jsonify(modulejson), 'utf8')
 
 // read existing manifest.json
 let manifest
@@ -264,7 +281,7 @@ function alphabetizeObject(obj) {
 
 // JSON.stringify but make lists single line
 function jsonify(obj) {
-    obj = JSON.stringify(obj, null, '\t')
+    obj = JSON.stringify(obj, null, '    ')
     let lists = obj.match(/\[[^]+?\].*/igm)
     if (lists) for (let list of lists) {
         obj = obj.substring(0,obj.indexOf(list)) + list.replace(/[ \n\t]*/igm, '') + obj.substring(obj.indexOf(list) + list.length)

@@ -6,6 +6,7 @@ Edit `manifest-generator.js` to:
 * Remove old/unfound manifest defs (default: true)
 * Only add highest/newest found version of def to manifest (default: false)
 * Add `"disableAutoUpdate": false` to module.json (default: true)
+* and more
 
 Use one of the following methods to create/update your module's `manifest.json`.
 #### Drag-n'-Drop Method
