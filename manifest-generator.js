@@ -217,7 +217,12 @@ function getDefs(file) {
                 }
                 for (let packetVer of versions) {
                     // if NaN
-                    if (isNaN(packetVer)) packetVer = String(packetVer).toLowerCase()
+                    if (isNaN(packetVer)) {
+		        packetVer = String(packetVer).toLowerCase()
+			// do not add to list if raw or event
+			if (packetVer == 'raw' || packetVer == 'event')
+			    continue
+		    }
                     // if in manifest
                     packet[0] = packet[0].replace(/['"` \t\n]/igm, '')
                     if (manifest.defs[packet[0]]) {
